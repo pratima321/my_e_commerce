@@ -5,7 +5,10 @@ class CartItem < ApplicationRecord
 
   def create_cart_item(add_addon)
     @add_addon = add_addon
-    base_price = calculate_base_price
+    if @add_addon == 'true'
+      self.addon_quantity = 1
+    end
+    self.base_price = calculate_base_price
     self.total_price = base_price
     save!
   end
@@ -15,14 +18,14 @@ class CartItem < ApplicationRecord
 
     raise "Can not add addons more than #{addon.max}" if @add_addon && addon && addon_quantity.to_i == addon.max
 
-    if @add_addon && addon
-      addon_quantity.to_i += 1
+    if @add_addon == 'true' && addon
+      self.addon_quantity = addon_quantity.to_i + 1
+      self.base_price = base_price + addon.display_price
     else
-      self.quantity += 1
+      self.quantity = quantity + 1
+      self.total_price = quantity * base_price
     end
 
-    self.base_price = calculate_base_price
-    self.total_price = quantity * base_price
     save!
   end
 
@@ -30,8 +33,8 @@ class CartItem < ApplicationRecord
     @remove_addon = cart_item_params[:remove_addon]
 
     if @remove_addon == 'true'
-      addon_quantity.to_i -= 1
-      self.base_price = calculate_base_price
+      self.addon_quantity = addon_quantity.to_i - 1
+      self.base_price = base_price - addon.display_price
       self.total_price = quantity * base_price
       save!
     elsif self.quantity > 1
@@ -64,12 +67,12 @@ class CartItem < ApplicationRecord
   end
 
   def calculate_base_price
-    if @add_addon && addon
+    if @add_addon == 'true' && addon
       addon.display_price + (variation ? variation.display_price : item.item_price)
-    elsif @remove_addon && addon
+    elsif @remove_addon == 'true' && addon
       addon.display_price - (variation ? variation.display_price : item.item_price)
     else
-      variation ? variation.display_price : item.item_price
+      addon ? addon.display_price + (variation ? variation.display_price : item.item_price) : variation ? variation.display_price : item.item_price
     end
   end
 end

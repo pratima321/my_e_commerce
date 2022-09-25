@@ -43,6 +43,7 @@ class CartItemsController < ApplicationController
       cart_item.delete_cart_item(@cart_item_params.merge({remove_addon: params['remove_addon']}))
     else
       render json: { error: 'Cart Item does not exist.' }
+      return
     end
 
     cart.update_gross_amount!
